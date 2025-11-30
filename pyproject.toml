@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "context-forge"
+version = "0.1.0"
+description = "Split-State Functional Orchestrator for Gemini 3 Context Caching"
+authors = ["Platform Engineering <ops@example.com>"]
+readme = "README.md"
+packages = [{include = "context_forge", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+toolz = "^0.12.0"          # Functional pipeline primitives (pipe, curry)
+pydantic = "^2.6.0"        # Immutable state enforcement
+google-genai = "^0.3.0"    # Gemini SDK with Context Caching support
+typer = "^0.9.0"           # CLI Interface
+rich = "^13.7.0"           # Terminal UI formatting
+mypy = "^1.8.0"            # Required for 'stubgen' (VectorBT Pro processing)
+types-requests = "^2.31.0"
+
+[tool.poetry.scripts]
+# This creates the 'forge' command in your shell
+forge = "context_forge.main:app"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
