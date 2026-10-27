@@ -25,8 +25,12 @@ def generate_vbt_stubs(state: ForgeState) -> ForgeState:
 
     try:
         # stubgen is installed via 'mypy' dependency
-        cmd =
-        
+        # --no-import parses source statically, so Numba/JIT code is never executed.
+        pkg_dir = state.vbt_repo.path / "vectorbtpro"
+        if not pkg_dir.is_dir():
+            return state.fail(f"Expected a 'vectorbtpro' package folder inside {state.vbt_repo.path}")
+        cmd = ["stubgen", "--no-import", "-o", str(target_dir), str(pkg_dir)]
+
         # We capture output to avoid polluting the terminal
         subprocess.run(cmd, check=True, capture_output=True)
         
@@ -63,8 +67,11 @@ def pack_repositories(state: ForgeState) -> ForgeState:
         # We ignore tests and lockfiles to save tokens
         cmd.extend(["--ignore", "**/*.test.ts,**/*.spec.py,**/tests/**,**/*.lock"])
 
+        # Write output to the scratch dir, not into the user's repositories.
+        out_path = Path("/tmp/forge") / output_filename
+        cmd[cmd.index("--output") + 1] = str(out_path)
         subprocess.run(cmd, cwd=cwd, check=True, capture_output=True)
-        return cwd / output_filename
+        return out_path
 
     try:
         # A. Pack VBT Stubs (Reference)
