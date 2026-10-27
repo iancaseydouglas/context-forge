@@ -1,8 +1,7 @@
 # LLM Context Forge
 
-Functional Python pipeline over immutable state that reduces three repos to their API surface, merges them into one XML context, and caches it in Gemini, letting coding assistants write against large libraries without ingesting full source.
+Functional pipeline over immutable state to prepare codebases for LLM context caching.
 
-**Stack:** Python 3.11+ · Pydantic v2 · toolz · Typer · Rich · Repomix · mypy/stubgen · Gemini context caching
 
 ## Overview
 
