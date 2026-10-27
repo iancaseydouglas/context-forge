@@ -1,4 +1,4 @@
-# Context Forge ⚒️
+# LLM Context Forge
 
 **TL;DR:** Context Forge shrinks three codebases by role, merges them into one XML context, and caches it in Gemini, so a coding assistant can write against large libraries without reading their full source.
 
