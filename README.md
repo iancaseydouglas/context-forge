@@ -1,49 +1,89 @@
+# LLM Context Forge
 
-# Context Forge ⚒️
+**TL;DR:** Context Forge shrinks three codebases by role, merges them into one XML context, and caches it in Gemini, so a coding assistant can write against large libraries without reading their full source.
 
-**A Split-State Functional Orchestrator for Gemini 3 Context Caching.**
+A split-state functional orchestrator that prepares large codebases for LLM context caching.
 
-This tool hydrates a "Quant-State" development environment by processing local repositories and uploading them to Google Vertex AI / Gemini Context Cache.
+Python 3.11+ · Pydantic v2 · toolz · Typer · Rich · Repomix · mypy/stubgen · Gemini context caching
 
-## Features
+## Overview
 
-* **VectorBT Pro Handling**: Uses `stubgen` to strip massive Numba implementation details while keeping type signatures for the LLM.
-* **Lightweight Charts Handling**: Uses `repomix --compress` (Tree-sitter) to keep TypeScript interfaces but remove logic.
-* **Gemini 3 Ultra**: Uploads the combined context to the 2M+ token window with explicit caching.
+Coding assistants need the APIs they write against, not the full source behind them. Context Forge shrinks three repos by role, merges them into one XML context, caches it in Gemini, and writes the cache ID into the active repo's IDE rules.
 
-## Installation
+Built for a quant workflow: VectorBT Pro, Lightweight Charts, and a strategy repo.
 
-### Dependencies
+## Strategy per repo
+
+| Repository | Role | Strategy | Tooling | Kept |
+| --- | --- | --- | --- | --- |
+| Strategy repo | read/write | `full` | Repomix | Everything |
+| VectorBT Pro | reference | `stub` | stubgen, Repomix | Type signatures only |
+| Lightweight Charts | reference | `compress` | Repomix `--compress` | Interfaces and JSDoc |
+
+## Pipeline
+
+```
+3 repo paths -> ForgeState (immutable)
+  -> generate_vbt_stubs    # stubgen on VectorBT Pro
+  -> pack_repositories     # Repomix x3, merge to one XML
+  -> upload_to_gemini      # explicit cache, 8h TTL
+  -> cache ID -> .antigravity/rules.md
+```
+
+The merged XML labels each section for the model:
+
+```xml
+<context_root>
+  <library name="vectorbtpro" type="stubbed_reference">...</library>
+  <library name="lightweight-charts" type="compressed_reference">...</library>
+  <workspace name="active_repository" type="full_fidelity">...</workspace>
+</context_root>
+```
+
+## Design
+
+- **Pure core, effectful ops.** `core/` holds frozen Pydantic models and no I/O. `ops/` holds stages shaped `ForgeState -> ForgeState`.
+- **Immutable state.** Stages return copies via `model_copy`. Never mutation.
+- **One expression.** `pipe(state, generate_vbt_stubs, pack_repositories, upload_to_gemini)`
+- **Short-circuit errors.** A failed stage calls `state.fail(...)`; later stages pass the state through. The CLI reports once and exits non-zero.
+- **Clean footprint.** Scratch files live in `/tmp/forge`. Only `.antigravity/rules.md` touches your repos.
+
+## Skills shown
+
+Functional pipeline design · Pydantic v2 state modeling · Typer/Rich CLIs · orchestrating external tools · LLM context caching · Poetry `src/` packaging
+
+## Run
+
+Needs Python 3.11+, Node.js, a Google API key, and a licensed VectorBT Pro.
 
 ```bash
-pip install poetry
 poetry install
 npm install -g repomix
-```
+export GOOGLE_API_KEY="..."
 
-## Usage
-
-Set your Google API Key:
-
-```bash
-export GOOGLE_API_KEY="AIzaSy..."
-```
-
-Run the Forge:
-
-```bash
 poetry run forge \
-  --active /path/to/my-strategy-repo \
-  --vbt /path/to/vectorbtpro_library \
-  --charts /path/to/lightweight-charts_library
+  --active /path/to/strategy-repo \
+  --vbt /path/to/dir-containing-vectorbtpro \
+  --charts /path/to/lightweight-charts
 ```
 
-The tool will output a **Cache ID** and automatically inject it into your active repo's `.antigravity/rules.md`.
+`--vbt` is the directory that *contains* the `vectorbtpro` package.
 
----
+## Structure
 
-### Implementation Notes
+```
+src/context_forge/
+├── main.py              # CLI
+├── core/state.py        # ForgeState, RepoConfig
+└── ops/
+    ├── compression.py   # stubgen, Repomix, merge
+    └── gateway.py       # Gemini cache upload
+```
 
-1. **VBT Stubbing**: The `generate_vbt_stubs` function assumes `vectorbtpro` is the folder name inside the path you provide. Since VBT Pro is proprietary, ensure the path you pass points to the root directory that *contains* the `vectorbtpro` package folder.
-2. **Repomix**: This code relies on `npx` or a global install of `repomix`. Ensure Node.js is available in your Linux environment.
-3. **Permissions**: Ensure the script has write access to `/tmp/forge` for intermediate XML generation.
+## Roadmap
+
+- Configurable repo targets
+- Real token counting with a budget guard
+- Cache reuse and refresh
+- Per-stage unit tests
+

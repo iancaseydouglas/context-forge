@@ -10,8 +10,8 @@ packages = [{include = "context_forge", from = "src"}]
 python = "^3.11"
 toolz = "^0.12.0"          # Functional pipeline primitives (pipe, curry)
 pydantic = "^2.6.0"        # Immutable state enforcement
-google-genai = "^0.3.0"    # Gemini SDK with Context Caching support
-typer = "^0.9.0"           # CLI Interface
+google-genai = "^2.33.0"  # Gemini SDK with Context Caching support
+typer = ">=0.16,<1.0"  # CLI interface
 rich = "^13.7.0"           # Terminal UI formatting
 mypy = "^1.8.0"            # Required for 'stubgen' (VectorBT Pro processing)
 types-requests = "^2.31.0"

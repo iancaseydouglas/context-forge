@@ -1,5 +1,5 @@
 import typer
-import os
+from datetime import datetime
 from pathlib import Path
 from rich.console import Console
 from toolz import pipe
@@ -68,7 +68,7 @@ def hydrate(
         with open(rule_path, "w") as f:
             f.write("# Context Forge Configuration\n\n")
             f.write(f"**Gemini Cache ID:** `{final_state.cache_name}`\n")
-            f.write(f"**Generated:** {os.popen('date').read().strip()}\n\n")
+            f.write(f"**Generated:** {datetime.now().isoformat(timespec='seconds')}\n\n")
             f.write("## Context Contents\n")
             f.write("- **VectorBT Pro:** Python Stubs (.pyi)\n")
             f.write("- **Lightweight Charts:** Compressed TypeScript\n")
